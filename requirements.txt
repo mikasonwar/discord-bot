@@ -1,0 +1,6 @@
+"discord"
+python-dotenv
+pydal
+mangadexpy
+schedule
+asyncio

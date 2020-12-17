@@ -1,0 +1,4 @@
+.env
+*.table
+*.db
+__pycache__/
