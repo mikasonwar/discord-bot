@@ -44,7 +44,7 @@ async def globally_block_dms(ctx):
 @bot.check
 async def globally_check_channel(ctx):
     channel = getBindedChannel(ctx)
-    return channel is None or ctx.command == bindChannel or channel == ctx.channel or "chad" in ctx.message.lower()
+    return channel is None or ctx.command == bindChannel or channel == ctx.channel
 
 @bot.event
 async def on_ready():
@@ -58,6 +58,8 @@ async def on_message(message):
     if "chad" in message.content.lower():
         file = discord.File(utils_mikas.getRandomFileFromPath('hasan'))
         await message.channel.send(file=file)
+    else:
+        await bot.process_commands(message)
 
 @bot.command(name='teste', help='Mensagem de teste!')
 async def mensagemTeste(ctx):
