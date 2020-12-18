@@ -5,6 +5,7 @@ import utils_mikas
 from discord.ext import commands
 from dotenv import load_dotenv
 
+VERSION = '0.0.1'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -64,6 +65,10 @@ async def on_message(message):
 @bot.command(name='teste', help='Mensagem de teste!')
 async def mensagemTeste(ctx):
     await ctx.send('Não me acordes!')
+    
+@bot.command(name='versao', help='Versão atual do bot')
+async def mensagemTeste(ctx):
+    await ctx.send(f'Versão {VERSION}')
 
 @bot.command(name='testeArgs', help='Mensagem de Teste de argumentos')
 async def mensagemArgumentos(ctx, arg1, arg2):
