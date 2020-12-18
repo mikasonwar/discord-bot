@@ -1,6 +1,4 @@
-"discord"
+"discordpy"
 python-dotenv
 pydal
 mangadexpy
-schedule
-asyncio

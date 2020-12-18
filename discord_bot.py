@@ -1,6 +1,7 @@
 import discord
 import database
 import os
+import utils_mikas
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -43,11 +44,20 @@ async def globally_block_dms(ctx):
 @bot.check
 async def globally_check_channel(ctx):
     channel = getBindedChannel(ctx)
-    return channel is None or ctx.command == bindChannel or channel == ctx.channel 
+    return channel is None or ctx.command == bindChannel or channel == ctx.channel or "chad" in ctx.message.lower()
 
 @bot.event
 async def on_ready():
     print(f'{bot.user} has connected to Discord!')
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    if "chad" in message.content.lower():
+        file = discord.File(utils_mikas.getRandomFileFromPath('hasan'))
+        await message.channel.send(file=file)
 
 @bot.command(name='teste', help='Mensagem de teste!')
 async def mensagemTeste(ctx):
@@ -84,7 +94,8 @@ async def MangaDexNotification(name,image_url, url):
 
 @bot.event
 async def on_disconnect():
-    exit()
+    print("Disconnecting...")
+    # exit()
 
 def start_bot():
     bot.run(token)

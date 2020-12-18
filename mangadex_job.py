@@ -26,13 +26,15 @@ def getTrackedChapter():
         
 
 def getLastestChapter():
-    result = [chapter for chapter in mangadex.Manga(manga_id).populate().get_chapters() if chapter.cached_lang_code == 'gb']
+    result = [chapter for chapter in mangadex.Manga(manga_id).populate().get_chapters()]
     chapter = result[0]
     return chapter
 
 async def job():
     latest = getLastestChapter()
-    if(getTrackedChapter() > int(getLastestChapter().cached_chapter)):
+    print(f"Tracked Chapter: {getTrackedChapter()}")
+    print(f"Latest Chapter: {latest.cached_chapter}")
+    if(getTrackedChapter() != int(getLastestChapter().cached_chapter)):
         manga = mangadex.Manga(manga_id).populate()
         await discord_bot.MangaDexNotification(format_chapter_name(latest), "https://mangadex.org/" + manga.cover_url, f"https://mangadex.org/chapter/{latest.id}")
 
