@@ -5,7 +5,6 @@ import utils_mikas
 from discord.ext import commands
 from dotenv import load_dotenv
 
-
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
@@ -80,7 +79,7 @@ async def bindChannel(ctx):
                            key='bindedChannel',
                            guild=ctx.guild.id,
                            value=ctx.channel.id)
-    DB.commit()                          
+    DB.commit()
     await ctx.send('Agora só respondo neste channel! Haters!')
 
 async def MangaDexNotification(name,image_url, url):
