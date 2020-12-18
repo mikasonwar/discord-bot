@@ -22,6 +22,7 @@ def getTrackedChapter():
                            key='mangaChapter',
                            guild=0,
                            value=chapter)
+        DB.commit()
         return int(chapter)
         
 
