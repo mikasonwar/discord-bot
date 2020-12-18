@@ -5,7 +5,7 @@ import utils_mikas
 from discord.ext import commands
 from dotenv import load_dotenv
 
-VERSION = '0.0.1'
+VERSION = '0.0.1.1'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
