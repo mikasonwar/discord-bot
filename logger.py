@@ -17,7 +17,7 @@ class Logger:
         if os.path.exists(file_path):
             # my eyes hurt
             today = date.today().strftime("%d-%m-%Y")
-            created = datetime.strptime(time.ctime(os.path.getctime(file_path)), "%c").strftime("%d-%m-%Y")
+            created = datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%d-%m-%Y")
             if today != created:
                 os.rename(file_path, f"{file_path}.{created}")
 
