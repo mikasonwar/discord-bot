@@ -3,17 +3,16 @@ import database
 import os
 import utils_mikas
 import presences
+import logger
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-VERSION = '0.2.1'
+VERSION = '0.3.0'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
-prefix = os.getenv('DISCORD_PREFIX')
-
-if prefix is None:
-    prefix = '!'
+prefix = os.getenv('DISCORD_PREFIX', '!')
+logger = logger.Logger("logs")
 
 
 # Singleton definition
@@ -73,29 +72,38 @@ async def change_status():
     await setRandomPresence()
 
 # Checks
-
-@bot.check
-async def globally_block_dms(ctx):
-    return ctx.guild is not None
-
 @bot.check
 async def globally_check_channel(ctx):
     channel = getBindedChannel(ctx)
     return channel is None or ctx.command == bindChannel or channel == ctx.channel
 
+# Check apenas para fazer log
+@bot.check
+async def log_command(ctx):
+    logger.warning(f"{ctx.author} used command {ctx.command}")
+    return True
+
 # Events
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user} has connected to Discord!')
+    logger.info(f'{bot.user} has connected to Discord!')
     change_status.start()
 
 @bot.event
 async def on_message(message):
+    # Bloquear o bot de responder a ele mesmo
     if message.author == bot.user:
         return
 
+    # Bloquear DMs 
+    if isinstance(message.channel,discord.DMChannel):
+        logger.warning(f"{message.author} has tried to send a DM")
+        return
+
+
     if "chad" in message.content.lower():
+        logger.warning(f"{message.author} fired hasan event")
         file = discord.File(utils_mikas.getRandomFileFromPath('hasan'))
         await message.channel.send(file=file)
     else:
@@ -103,7 +111,7 @@ async def on_message(message):
 
 @bot.event
 async def on_disconnect():
-    print("Disconnecting...")
+    logger.info('Disconnecting...')
     # exit()
 
 # Commands
