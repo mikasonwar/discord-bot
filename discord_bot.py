@@ -6,7 +6,7 @@ import presences
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-VERSION = '0.0.2'
+VERSION = '0.2.1'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')

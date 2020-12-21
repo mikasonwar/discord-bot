@@ -19,7 +19,7 @@ PRESENCES = [
     RandomPresence(activity=discord.Game(name="Hasan = Chad")),
     RandomPresence(activity=discord.Game(name="Half life 4")),
     RandomPresence(activity=discord.Game(name="Bati num inglês e o meu pai pagou 2: eletric boogaloo")),
-    RandomPresence(activity=discord.Game(name="Há uma pinura de camões a piscar o olho")),
+    RandomPresence(activity=discord.Game(name="Há uma pintura de camões a piscar o olho")),
     RandomPresence(activity=discord.Game(name="Tenho de gostar senão sou homofóbico né?")),
     RandomPresence(activity=discord.Game(name="(...) ela quis beijar me e eu fugi para a casa de banho")),
     RandomPresence(activity=discord.Game(name="uma gaja quer vir a minha casa mas não deixo porque ela quer trazer o cão")),
