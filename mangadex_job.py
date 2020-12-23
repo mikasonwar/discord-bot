@@ -15,6 +15,7 @@ class MangaDexJob(object):
         self.chapter_name = ""
         self.manga_cover = ""
         self.chapter_url = ""
+        self.chapter_number = None
         self.job = False
         self.check_for_chapter()
 
@@ -40,16 +41,25 @@ class MangaDexJob(object):
         latest = self.getLastestChapter()
         bot.write_to_logs(f"Tracked Chapter: {self.getTrackedChapter()}")
         bot.write_to_logs(f"Latest Chapter: {latest.cached_chapter}")
-        if(self.getTrackedChapter() != int(self.getLastestChapter().cached_chapter)):
+        if(self.getTrackedChapter() != int(latest.cached_chapter)):
             bot.write_to_logs("New Chapter detected... sending message")
             manga = mangadex.Manga(manga_id).populate()
 
             self.job = True
+            self.chapter_number = latest.cached_chapter
             self.chapter_name = self.format_chapter_name(latest)
             self.manga_cover = f"https://mangadex.org/{manga.cover_url}"
             self.chapter_url = f"https://mangadex.org/chapter/{latest.id}"
         else:
             bot.write_to_logs("No new chapters")
+
+    def updateTrackedChapter(self):
+        DB.config.update_or_insert(DB.config.key == 'mangaChapter',
+                            key='mangaChapter',
+                            guild=0,
+                            value=self.chapter_number)
+        DB.commit()
+
 
     def format_chapter_name(self,chapter):
         return f'Vol.{chapter.cached_volume} {chapter.cached_chapter} - {chapter.cached_title}'
@@ -62,6 +72,7 @@ async def job(fun):
     embedVar.set_footer(text="Made by Mikas™")
     embedVar.set_image(url=mangadex.manga_cover)
     embedVar.set_thumbnail(url=mangadex.manga_cover)
+    mangadex.updateTrackedChapter()
     await fun(embed=embedVar)
 
 if mangadex.job:
