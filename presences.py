@@ -30,6 +30,8 @@ PRESENCES = [
     RandomPresence(activity=discord.Game(name="É um cigano que eu conheci na rua")),
     RandomPresence(activity=discord.Game(name="Ele tem cadelas, és só mais uma")),
     RandomPresence(activity=discord.Game(name="não sou manteiga mas por ti derreto")),
+    RandomPresence(activity=discord.Game(name="singued soup")),
+    RandomPresence(activity=discord.Game(name="kika pede o gustavo em namoro por amor de deus")),
 ]
 
 def getRandomPresence():

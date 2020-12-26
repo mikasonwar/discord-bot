@@ -7,7 +7,7 @@ import logger
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-VERSION = '0.4.1'
+VERSION = '0.4.2'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
