@@ -13,6 +13,7 @@ load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 prefix = os.getenv('DISCORD_PREFIX', '!')
 logger = logger.Logger("logs")
+maintainers = ['Kappabanana#1662','mikasonwar#1337']
 
 
 # Singleton definition
@@ -127,6 +128,26 @@ async def mensagemTeste(ctx):
 @bot.command(name='testeArgs', help='Mensagem de Teste de argumentos')
 async def mensagemArgumentos(ctx, arg1, arg2):
     await ctx.send(f'Argumento 1 : {arg1} | Argumento 2 : {arg2}')
+
+@bot.command(name='presence', help='Mensagem de Teste de argumentos')
+async def mensagemPresences(ctx, arg1, *args):
+    if(ctx.author in maintainers):
+        if arg1 == "list":
+            for row in DB(DB.presence).select():
+                msg = msg + "    " + str(row.id) + " - " + row.value
+                print(row)
+                # adicionar a msg para enviar
+        if arg1 == "add":
+            DB.presence.insert(value=' '.join(args))
+            DB.commit()
+            msg = "Presence adicionada"
+        if arg1 == "delete":
+            DB(DB.presence.id == int(args[0])).delete()
+            DB.commit()
+            msg = "Presence apagada"
+        await ctx.send(msg)         
+    else:
+        await ctx.send("Não tens permissão para isto!") 
 
 @bot.command(name='quit')
 async def botquit(ctx):

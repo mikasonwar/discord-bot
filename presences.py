@@ -1,5 +1,8 @@
 import discord
+import database
 import random
+
+DB = database.getDB()
 
 class RandomPresence:
   def __init__(self, activity, status = discord.Status.online, afk = False):
@@ -36,6 +39,10 @@ PRESENCES = [
 ]
 
 def getRandomPresence():
-    return random.choice(PRESENCES)
+    row = DB(DB.presence.value).select(orderby='<random>').first()
+    if(row != None):
+        return RandomPresence(activity=discord.Game(name=row.value))
+    else:
+        return random.choice(PRESENCES)
     
     

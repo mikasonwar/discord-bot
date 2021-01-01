@@ -7,6 +7,7 @@ connection_string = os.getenv('CONNECTION_STRING')
 
 def getDB(): 
     DB = DAL(connection_string)
-    DB.define_table('config', Field("key", unique=True), Field('guild'),Field('value'), redefine = True)    
+    DB.define_table('config', Field("key", unique=True), Field('guild'),Field('value'), redefine = True)
+    DB.define_table('presence', Field('value'), redefine = False)
     return DB
 
