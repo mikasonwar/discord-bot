@@ -67,7 +67,6 @@ class MangaDexJob(object):
 mangadex = MangaDexJob()
 
 async def job(fun):
-    mangadex.chapter_name
     embedVar = discord.Embed(title=mangadex.chapter_name, description="New Chapter", url=mangadex.chapter_url, color=0x00ff00)
     embedVar.set_footer(text="Made by Mikas™")
     embedVar.set_image(url=mangadex.manga_cover)

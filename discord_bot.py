@@ -13,7 +13,7 @@ load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 prefix = os.getenv('DISCORD_PREFIX', '!')
 logger = logger.Logger("logs")
-maintainers = ['Kappabanana#1662','mikasonwar#1337']
+maintainers = os.getenv('MAINTANERS','151004374053814273,123928976589717510').split(',')
 
 
 # Singleton definition
@@ -51,17 +51,6 @@ def getBindedChannel(ctx):
     else:
         return None
 
-async def MangaDexNotification(name,image_url, url):
-    rows = DB(DB.config.key == "bindedChannel").select()
-    for row in rows:
-        channel_id = row.value
-        channel = bot.get_channel(channel_id)
-        embedVar = discord.Embed(title=name, description="New Chapter", url=url, color=0x00ff00)
-        embedVar.set_footer(text="Made by Mikas™")
-        embedVar.set_image(url=image_url)
-        embedVar.set_thumbnail(url=image_url)
-        await bot.get_channel(int(channel_id)).send(embed=embedVar)
-
 async def setRandomPresence():
     presence = presences.getRandomPresence()
     await bot.change_presence(status = presence.status, activity = presence.activity, afk = presence.afk)
@@ -89,6 +78,7 @@ async def log_command(ctx):
 @bot.event
 async def on_ready():
     logger.info(f'{bot.user} has connected to Discord!')
+    presences.setDefaultPresences()
     change_status.start()
 
 @bot.event
@@ -131,23 +121,48 @@ async def mensagemArgumentos(ctx, arg1, arg2):
 
 @bot.command(name='presence', help='Mensagem de Teste de argumentos')
 async def mensagemPresences(ctx, arg1, *args):
-    if(ctx.author in maintainers):
-        if arg1 == "list":
-            for row in DB(DB.presence).select():
-                msg = msg + "    " + str(row.id) + " - " + row.value
-                print(row)
-                # adicionar a msg para enviar
-        if arg1 == "add":
-            DB.presence.insert(value=' '.join(args))
-            DB.commit()
-            msg = "Presence adicionada"
-        if arg1 == "delete":
-            DB(DB.presence.id == int(args[0])).delete()
-            DB.commit()
-            msg = "Presence apagada"
-        await ctx.send(msg)         
-    else:
+    if str(ctx.author.id) not in maintainers:
         await ctx.send("Não tens permissão para isto!") 
+        return
+    
+    msg=""
+
+    if arg1 == "list":
+        page_size = 10
+        if args is None or len(args) == 0 or args[0] is None:
+            page=0
+        else:
+            page = int(args[0])-1
+        presenceList = []
+
+
+        embedVar = discord.Embed(title="Lista de presences:", description=f"Página {page+1}", color=0x00ff00)
+        embedVar.set_footer(text="Made by Mikas™ & Marcel™")
+
+        all_presences = DB(DB.presence).select()
+
+        for row in all_presences[page*page_size:(page+1)*page_size]:
+            presenceList.append(f"    `{row.id}` - `{row.value}`")
+        
+        if presenceList:
+            embedVar.add_field(name="Presences", value='\n'.join(presenceList), inline=False)
+        else:
+            embedVar.add_field(name="Presences", value='Não existe nenhuma nesta página!', inline=False)
+
+        if len(all_presences[(page+1)*page_size:(page+2)*page_size]):
+            embedVar.add_field(name="Próxima Página", value=f'\nFaz `{prefix}presence list {page+2}` para veres a próxima página!', inline=False)
+
+        await ctx.send(embed=embedVar)      
+        return        
+
+    if arg1 == "add":
+        presences.addPresence(' '.join(args))
+        msg = "Presence adicionada"
+    if arg1 == "delete":
+        presences.deletePresence(int(args[0]))
+        msg = "Presence apagada"
+    
+    await ctx.send(msg)         
 
 @bot.command(name='quit')
 async def botquit(ctx):
