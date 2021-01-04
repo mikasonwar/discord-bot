@@ -4,10 +4,11 @@ import os
 import utils_mikas
 import presences
 import logger
+import guild_preset
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-VERSION = '0.5.0'
+VERSION = '0.6.0'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -38,6 +39,9 @@ DB = database.getDB()
 
 # Helper Functions
 
+def isUserMaintainer(id):
+    return str(id) in maintainers
+
 def getBot():
     return DiscordBot().bot
 
@@ -50,6 +54,9 @@ def getBindedChannel(ctx):
         return bot.get_channel(int(rows[0].value))
     else:
         return None
+
+async def sendNoPermissionMessage(ctx):
+    await ctx.send("Não tens permissão para isto!") 
 
 async def setRandomPresence():
     presence = presences.getRandomPresence()
@@ -119,10 +126,25 @@ async def mensagemTeste(ctx):
 async def mensagemArgumentos(ctx, arg1, arg2):
     await ctx.send(f'Argumento 1 : {arg1} | Argumento 2 : {arg2}')
 
-@bot.command(name='presence', help='Mensagem de Teste de argumentos')
+@bot.command(name='switch', help='Trocar entre presets')
+async def switchGuildPreset(ctx, arg1):
+    if not isUserMaintainer(ctx.author.id):
+        await sendNoPermissionMessage(ctx) 
+        return
+    
+    preset = guild_preset.getGuildPreset(arg1)
+    if preset is None:
+        await ctx.send(f"Não existe um preset com o nome `{arg1}`")
+        return
+    
+    await ctx.guild.edit(name=preset.name,icon=preset.image)
+    await ctx.send(f"Alterado para o preset `{preset.name}`")
+    
+
+@bot.command(name='presence', help='Comando para gerir presences')
 async def mensagemPresences(ctx, arg1, *args):
-    if str(ctx.author.id) not in maintainers:
-        await ctx.send("Não tens permissão para isto!") 
+    if not isUserMaintainer(ctx.author.id):
+        await sendNoPermissionMessage(ctx) 
         return
     
     msg=""
@@ -164,13 +186,19 @@ async def mensagemPresences(ctx, arg1, *args):
     
     await ctx.send(msg)         
 
-@bot.command(name='quit')
+@bot.command(name='quit', help='Fazer com que o bot pare')
 async def botquit(ctx):
+    if not isUserMaintainer(ctx.author.id):
+        await sendNoPermissionMessage(ctx) 
+        return
     await ctx.send('Já vou dormir, nem queria!')
     await bot.logout()
 
-@bot.command(name='bindChannel')
+@bot.command(name='bindChannel', help='Fazer bind a um channel')
 async def bindChannel(ctx):
+    if not isUserMaintainer(ctx.author.id):
+        await sendNoPermissionMessage(ctx) 
+        return
     DB.config.update_or_insert(DB.config.key == 'bindedChannel' and DB.config.guild == ctx.guild.id,
                            key='bindedChannel',
                            guild=ctx.guild.id,

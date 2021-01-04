@@ -6,7 +6,6 @@ def getFilesFromPath(path):
     onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
     return onlyfiles
 
-
 def getRandomFileFromPath(path):
     path = f"images/{path}/"
     files = getFilesFromPath(path)
