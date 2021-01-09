@@ -3,7 +3,7 @@ import os
 from pydal import DAL, Field
 
 load_dotenv()
-connection_string = os.getenv('CONNECTION_STRING')
+connection_string = os.getenv('CONNECTION_STRING', 'sqlite://storage.db')
 
 def getDB(): 
     DB = DAL(connection_string)
