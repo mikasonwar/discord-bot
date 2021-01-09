@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 VERSION = '0.7.0'
 
 load_dotenv()
-token = os.getenv('DISCORD_TOKEN','MzU1ODMyMzQwNjAzMjA3Njgw.WbMQsQ.mPwD1UeMeuNEgou7MozZNPzO-nc')
+token = os.getenv('DISCORD_TOKEN')
 prefix = os.getenv('DISCORD_PREFIX', '!')
 logger = logger.Logger("logs")
 maintainers = os.getenv('MAINTANERS','151004374053814273,123928976589717510').split(',')
