@@ -5,6 +5,7 @@ import utils_mikas
 import presences
 import logger
 import guild_preset
+import permissions as Permissions
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
@@ -17,8 +18,8 @@ logger = logger.Logger("logs")
 maintainers = os.getenv('MAINTANERS','151004374053814273,123928976589717510').split(',')
 bot_user_role = os.getenv('BOT_USER_ROLE',797498453092859914)
 bot_admin_role = os.getenv('BOT_ADMIN_ROLE',797498732035309580)
-allow_permissions = os.getenv('ALLOW_PERMISSIONS',False) # Allow users with the roles to use commands (Maybe changing this to save in the DB)
-
+allow_permissions = os.getenv('ALLOW_PERMISSIONS',"False")=="True" # Allow users with the roles to use commands (Maybe changing this to save in the DB)
+permissions = Permissions.Permissions(maintainers, bot_admin_role, bot_user_role, allow_permissions)
 
 # Singleton definition
 def singleton(cls, *args, **kw):
@@ -42,9 +43,6 @@ DB = database.getDB()
 
 # Helper Functions
 
-def isUserMaintainer(id):
-    return str(id) in maintainers
-
 def getBot():
     return DiscordBot().bot
 
@@ -59,16 +57,11 @@ def getBindedChannel(ctx):
         return None
 
 async def sendNoPermissionMessage(ctx):
-    await ctx.send("You do not have permission to run this command.") 
+    await ctx.send("Não tens permissão para correr este comando.") 
 
 async def setRandomPresence():
     presence = presences.getRandomPresence()
-    await bot.change_presence(status = presence.status, activity = presence.activity, afk = presence.afk)
-
-def checkPermission(*roles):
-    def predicate(ctx):
-        return (isUserMaintainer(ctx.message.author.id) or (allow_permissions and commands.has_any_role(roles)))
-    return commands.check(predicate)    
+    await bot.change_presence(status = presence.status, activity = presence.activity, afk = presence.afk)  
 
 # Tasks 
 
@@ -122,8 +115,11 @@ async def on_disconnect():
 
 @bot.event
 async def on_command_error(ctx, error):
-    print(error)
-    await ctx.send(f'{error}') # Map each error for custom message?
+    if(type(error).__name__ == "CheckAnyFailure"):
+        logger.info(f'{ctx.message.author} tried to use a command that he doesn\'t have permission')
+        await sendNoPermissionMessage(ctx)
+    else:
+        logger.info(f'{ctx.message.author} {error}')
 
 # Commands
 
@@ -140,16 +136,13 @@ async def mensagemArgumentos(ctx, arg1, arg2):
     await ctx.send(f'Argumento 1 : {arg1} | Argumento 2 : {arg2}')
 
 @bot.command(name='noobs', help='Permite ou não users com a role de usar comandos')
+@commands.check_any(permissions.isMaintainer())
 async def noobs(ctx):
-    if not isUserMaintainer(ctx.author.id):
-        await sendNoPermissionMessage(ctx) 
-        return
-    global allow_permissions
-    allow_permissions = not allow_permissions
-    await ctx.send(f"Alterado para `{allow_permissions}`") 
+    permissions.setAllowPermissions(not permissions.allow_permissions)
+    await ctx.send(f"Alterado para `{permissions.allow_permissions}`") 
 
 @bot.command(name='switch', help='Trocar entre presets')
-@commands.check_any(checkPermission(bot_admin_role))
+@commands.check_any(permissions.isAdmin())
 async def switchGuildPreset(ctx, arg1):
     
     preset = guild_preset.getGuildPreset(arg1)
@@ -162,7 +155,7 @@ async def switchGuildPreset(ctx, arg1):
     
 
 @bot.command(name='presence', help='Comando para gerir presences')
-@commands.check_any(checkPermission(bot_admin_role))
+@commands.check_any(permissions.isAdmin())
 async def mensagemPresences(ctx, arg1, *args):
     msg=""
 
@@ -204,13 +197,13 @@ async def mensagemPresences(ctx, arg1, *args):
     await ctx.send(msg)         
 
 @bot.command(name='quit', help='Fazer com que o bot pare')
-@commands.check_any(checkPermission(bot_admin_role))
+@commands.check_any(permissions.isAdmin())
 async def botquit(ctx):
     await ctx.send('Já vou dormir, nem queria!')
     await bot.logout()
 
 @bot.command(name='bindChannel', help='Fazer bind a um channel')
-@commands.check_any(checkPermission(bot_admin_role))
+@commands.check_any(permissions.isAdmin())
 async def bindChannel(ctx):
     DB.config.update_or_insert(DB.config.key == 'bindedChannel' and DB.config.guild == ctx.guild.id,
                            key='bindedChannel',
