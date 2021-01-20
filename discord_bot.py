@@ -8,8 +8,9 @@ import guild_preset
 import permissions as Permissions
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+from discord.utils import get
 
-VERSION = '0.7.0'
+VERSION = '0.8.0'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -20,6 +21,14 @@ bot_user_role = os.getenv('BOT_USER_ROLE',797498453092859914)
 bot_admin_role = os.getenv('BOT_ADMIN_ROLE',797498732035309580)
 allow_permissions = os.getenv('ALLOW_PERMISSIONS',"False")=="True" # Allow users with the roles to use commands (Maybe changing this to save in the DB)
 permissions = Permissions.Permissions(maintainers, bot_admin_role, bot_user_role, allow_permissions)
+mikas_guild = int(os.getenv('MIKAS_GUILD', '331530120445689857'))
+mikas_entry_leave = int(os.getenv('MIKAS_ENTRY_LEAVE', '449294623060394015'))
+mikas_join_role = int(os.getenv('MIKAS_JOIN_ROLE', '620281670922272780'))
+production = os.getenv('PRODUCTION',"False")=="True"
+# Defenir o intent para apanhar member_joins
+# https://discord.com/developers/applications/ Ligar o intent de membros caso esteja desligado
+intents = discord.Intents.default()
+intents.members = True
 
 # Singleton definition
 def singleton(cls, *args, **kw):
@@ -34,7 +43,7 @@ def singleton(cls, *args, **kw):
 @singleton
 class DiscordBot(object):
     def __init__(self):
-        self.bot = commands.Bot(command_prefix=prefix)
+        self.bot = commands.Bot(command_prefix=prefix, intents=intents)
 
 # Fetch bot (singleton) and db
 
@@ -120,6 +129,35 @@ async def on_command_error(ctx, error):
         await sendNoPermissionMessage(ctx)
     else:
         logger.info(f'{ctx.message.author} {error}')
+
+@bot.event
+async def on_member_join(member):
+    if member.guild.id != mikas_guild or production == False:
+        return
+
+    role = member.guild.get_role(mikas_join_role)
+    await member.add_roles(role)
+    channel = bot.get_channel(int(mikas_entry_leave))
+    await channel.send(f"<@{member.id}>, bem vindo.")
+
+@bot.event
+async def on_member_remove(member):
+    if member.guild.id != mikas_guild or production == False:
+        return
+
+    bans = await member.guild.bans()
+    banned = False
+    for ban in bans:
+        if ban.user.id == member.id:
+            banned = True
+            break
+
+
+    channel = bot.get_channel(int(mikas_entry_leave))
+    if banned:
+        await channel.send(f"o {member}, foi banido do discord.")
+    else:
+        await channel.send(f"o {member}, saiu do discord.")
 
 # Commands
 
