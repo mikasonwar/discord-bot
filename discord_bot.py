@@ -10,7 +10,7 @@ from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from discord.utils import get
 
-VERSION = '0.8.0'
+VERSION = '0.8.1'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -110,12 +110,12 @@ async def on_message(message):
         return
 
 
-    if "chad" in message.content.lower():
+    if "chad" in message.content.lower().split(" "):
         logger.warning(f"{message.author} fired hasan event")
         file = discord.File(utils_mikas.getRandomFileFromPath('hasan'))
         await message.channel.send(file=file)
-    else:
-        await bot.process_commands(message)
+    
+    await bot.process_commands(message)
 
 @bot.event
 async def on_disconnect():
