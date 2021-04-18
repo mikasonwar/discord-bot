@@ -5,12 +5,14 @@ import utils_mikas
 import presences
 import logger
 import guild_preset
+import re
 import permissions as Permissions
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from discord.utils import get
 
-VERSION = '0.8.1'
+
+VERSION = '0.9.0'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -233,6 +235,76 @@ async def mensagemPresences(ctx, arg1, *args):
         msg = "Presence apagada"
     
     await ctx.send(msg)         
+
+@bot.command(name='birthdayreminders')
+@commands.check_any(permissions.isMaintainer())
+async def birthdayreminders(ctx, arg1, *args):
+    if not arg1:
+        await ctx.send("Tens de dizer qual o comando buralhão")
+        return
+
+    # Metodo de listagem
+    if arg1 == "list":
+        page_size = 10
+        if args is None or len(args) == 0 or args[0] is None:
+            page=0
+        else:
+            page = int(args[0])-1
+        birthdayList = []
+
+        #embed
+        embedVar = discord.Embed(title="Lista de aniversários:", description=f"Página {page+1}", color=0x00ff00)
+        embedVar.set_footer(text="Made by Mikas™")
+
+        all_birthdays = DB(DB.birthdays).select()
+
+        for row in all_birthdays[page*page_size:(page+1)*page_size]:
+            birthdayList.append(f"    `{bot.get_user(int(row.user_id))}` - `{row.birthday}`")
+            
+        if birthdayList:
+            embedVar.add_field(name="Aniversários", value='\n'.join(birthdayList), inline=False)
+        else:
+            embedVar.add_field(name="Aniversários", value='Não existe nenhuma nesta página!', inline=False)
+
+        if len(all_birthdays[(page+1)*page_size:(page+2)*page_size]):
+            embedVar.add_field(name="Próxima Página", value=f'\nFaz `{prefix}birthdayreminders list {page+2}` para veres a próxima página!', inline=False)
+
+        await ctx.send(embed=embedVar)      
+        return 
+
+    # Metodo para adicionar um aniversário novo
+    if arg1 == "add":
+        # Validações
+
+        user_id = re.search('<@!?(\d+)>', args[0], re.IGNORECASE)
+        if user_id is None:
+            await ctx.send("Tens de mencionar um user para poder adicionar o aniversário")
+            return
+        birthday = re.search('(\d{2}/\d{2})', args[1], re.IGNORECASE)
+        if birthday is None:
+            await ctx.send("Tens de mandar uma data com o seguinte formato: dd/mm")
+            return
+        
+        # Inserir aniversário
+        DB.birthdays.insert(user_id = user_id.group(1), birthday = birthday.group(1))
+        DB.commit()
+        await ctx.send("Aniversário inserido com sucesso!")
+        return
+
+    # Metodo para apagar um aniversário existente
+    if arg1 == "delete":
+        # Validações
+        user_id = re.search('<@!?(\d+)>', args[0], re.IGNORECASE)
+        if user_id is None:
+            await ctx.send("Tens de mencionar um user para poder remover o aniversário")
+            return
+        
+        # Apagar aniversário
+        DB(DB.birthdays.user_id == user_id.group(1)).delete()
+        DB.commit()
+        await ctx.send("Aniversário apagado com sucesso!")
+        return
+
 
 @bot.command(name='quit', help='Fazer com que o bot pare')
 @commands.check_any(permissions.isAdmin())

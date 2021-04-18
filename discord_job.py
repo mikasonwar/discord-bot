@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
+mikas_guild_id = os.getenv('MIKAS_GUILD')
 logger = logger.Logger("logs", "jobs")
 DB = database.getDB()
 
@@ -15,10 +16,11 @@ DB = database.getDB()
 
 class DiscordJob(object):
     
-    def __init__(self,jobName):
+    def __init__(self,jobName, mikas_only = False):
         self.bot = discord.Client()
         self.jobName = jobName
         self.pending = []
+        self.mikas_only = mikas_only
         self.write_to_logs("Starting job...")
 
     async def on_ready(self):
@@ -26,7 +28,7 @@ class DiscordJob(object):
         for fun in self.pending:
             await fun.task(fun.cb)
         
-        await self.bot.logout()
+        await self.bot.close()
 
     async def on_disconnect(self):
         self.write_to_logs(f'Disconnecting...')
@@ -42,14 +44,24 @@ class DiscordJob(object):
         logger.info(f"{message} [Job: {self.jobName}]")
 
     async def _send_message_to_bound_channels(self, cb):
-        rows = DB(DB.config.key == "bindedChannel").select()
-        for row in rows:
-            channel_id = row.value
-            channel = self.bot.get_channel(int(channel_id))
+        if self.mikas_only:
+            rows = DB(DB.config.key == "bindedChannel", DB.config.guild == mikas_guild_id).select()
+            for row in rows:
+                channel_id = row.value
+                channel = self.bot.get_channel(int(channel_id))
 
-            task = asyncio.create_task(cb(channel.send))
-            await task
-            self.write_to_logs(f'Sent message to bound channels')
+                task = asyncio.create_task(cb(channel.send))
+                await task
+                self.write_to_logs(f'Sent message to mikas channel')
+        else:
+            rows = DB(DB.config.key == "bindedChannel").select()
+            for row in rows:
+                channel_id = row.value
+                channel = self.bot.get_channel(int(channel_id))
+
+                task = asyncio.create_task(cb(channel.send))
+                await task
+                self.write_to_logs(f'Sent message to bound channels')
 
 
     def run(self):

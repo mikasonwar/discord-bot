@@ -35,7 +35,6 @@ PRESENCES = [
     "Ele tem cadelas, és só mais uma",
     "não sou manteiga mas por ti derreto",
     "singued soup",
-    "kika pede o gustavo em namoro por amor de deus",
     "não mostrou o cú não namora comigo",
 ]
 
