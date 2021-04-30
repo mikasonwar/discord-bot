@@ -1,36 +1,22 @@
 import discord
-import database
-import os
-import utils_mikas
-import presences
-import logger
-import guild_preset
-import re
-import permissions as Permissions
+import libs.database as database
+import libs.presences as presences
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from discord.utils import get
+from cogs.general import General
+from cogs.presences import Presences
+from cogs.birthdays import Birthdays
+from cogs.joinleave import JoinLeave
+import settings
+import libs.messagehandler as MessageHandler
 
-
-VERSION = '0.9.0'
-
-load_dotenv()
-token = os.getenv('DISCORD_TOKEN')
-prefix = os.getenv('DISCORD_PREFIX', '!')
-logger = logger.Logger("logs")
-maintainers = os.getenv('MAINTANERS','151004374053814273,123928976589717510').split(',')
-bot_user_role = os.getenv('BOT_USER_ROLE',797498453092859914)
-bot_admin_role = os.getenv('BOT_ADMIN_ROLE',797498732035309580)
-allow_permissions = os.getenv('ALLOW_PERMISSIONS',"False")=="True" # Allow users with the roles to use commands (Maybe changing this to save in the DB)
-permissions = Permissions.Permissions(maintainers, bot_admin_role, bot_user_role, allow_permissions)
-mikas_guild = int(os.getenv('MIKAS_GUILD', '331530120445689857'))
-mikas_entry_leave = int(os.getenv('MIKAS_ENTRY_LEAVE', '449294623060394015'))
-mikas_join_role = int(os.getenv('MIKAS_JOIN_ROLE', '620281670922272780'))
-production = os.getenv('PRODUCTION',"False")=="True"
 # Defenir o intent para apanhar member_joins
 # https://discord.com/developers/applications/ Ligar o intent de membros caso esteja desligado
 intents = discord.Intents.default()
 intents.members = True
+
+logger = settings.logger
 
 # Singleton definition
 def singleton(cls, *args, **kw):
@@ -45,7 +31,7 @@ def singleton(cls, *args, **kw):
 @singleton
 class DiscordBot(object):
     def __init__(self):
-        self.bot = commands.Bot(command_prefix=prefix, intents=intents)
+        self.bot = commands.Bot(command_prefix=settings.prefix, intents=intents)
 
 # Fetch bot (singleton) and db
 
@@ -58,7 +44,11 @@ def getBot():
     return DiscordBot().bot
 
 def start_bot():
-    bot.run(token)
+    bot.add_cog(General(bot))
+    bot.add_cog(Presences(bot))
+    bot.add_cog(Birthdays(bot))
+    bot.add_cog(JoinLeave(bot))
+    bot.run(settings.token)
 
 def getBindedChannel(ctx):
     rows = DB(DB.config.key == "bindedChannel" and DB.config.guild == ctx.guild.id).select()
@@ -84,7 +74,7 @@ async def change_status():
 @bot.check
 async def globally_check_channel(ctx):
     channel = getBindedChannel(ctx)
-    return channel is None or ctx.command == bindChannel or channel == ctx.channel
+    return channel is None or ctx.command.name == "bindChannel" or channel == ctx.channel
 
 # Check apenas para fazer log
 @bot.check
@@ -111,11 +101,7 @@ async def on_message(message):
         logger.warning(f"{message.author} has tried to send a DM")
         return
 
-
-    if "chad" in message.content.lower().split(" "):
-        logger.warning(f"{message.author} fired hasan event")
-        file = discord.File(utils_mikas.getRandomFileFromPath('hasan'))
-        await message.channel.send(file=file)
+    await MessageHandler.handle(logger,message)
     
     await bot.process_commands(message)
 
@@ -129,195 +115,13 @@ async def on_command_error(ctx, error):
     if(type(error).__name__ == "CheckAnyFailure"):
         logger.info(f'{ctx.message.author} tried to use a command that he doesn\'t have permission')
         await sendNoPermissionMessage(ctx)
+    elif isinstance(error, commands.BadArgument):
+        logger.info(f'{ctx.message.author} tried to use a command but got {error}')
+        await ctx.send('Cá burro dréd, nem sabes usar o comando')
     else:
+        await ctx.send('Já partiste o caralho do bot fds')
         logger.info(f'{ctx.message.author} {error}')
-
-@bot.event
-async def on_member_join(member):
-    if member.guild.id != mikas_guild or production == False:
-        return
-
-    role = member.guild.get_role(mikas_join_role)
-    await member.add_roles(role)
-    channel = bot.get_channel(int(mikas_entry_leave))
-    await channel.send(f"<@{member.id}>, bem vindo.")
-
-@bot.event
-async def on_member_remove(member):
-    if member.guild.id != mikas_guild or production == False:
-        return
-
-    bans = await member.guild.bans()
-    banned = False
-    for ban in bans:
-        if ban.user.id == member.id:
-            banned = True
-            break
-
-
-    channel = bot.get_channel(int(mikas_entry_leave))
-    if banned:
-        await channel.send(f"o {member}, foi banido do discord.")
-    else:
-        await channel.send(f"o {member}, saiu do discord.")
 
 # Commands
 
-@bot.command(name='teste', help='Mensagem de teste!')
-async def mensagemTeste(ctx):
-    await ctx.send('Não me acordes!')
-    
-@bot.command(name='versao', help='Versão atual do bot')
-async def mensagemTeste(ctx):
-    await ctx.send(f'Versão {VERSION}')
-
-@bot.command(name='testeArgs', help='Mensagem de Teste de argumentos')
-async def mensagemArgumentos(ctx, arg1, arg2):
-    await ctx.send(f'Argumento 1 : {arg1} | Argumento 2 : {arg2}')
-
-@bot.command(name='noobs', help='Permite ou não users com a role de usar comandos')
-@commands.check_any(permissions.isMaintainer())
-async def noobs(ctx):
-    permissions.setAllowPermissions(not permissions.allow_permissions)
-    await ctx.send(f"Alterado para `{permissions.allow_permissions}`") 
-
-@bot.command(name='switch', help='Trocar entre presets')
-@commands.check_any(permissions.isAdmin())
-async def switchGuildPreset(ctx, arg1):
-    
-    preset = guild_preset.getGuildPreset(arg1)
-    if preset is None:
-        await ctx.send(f"Não existe um preset com o nome `{arg1}`")
-        return
-    
-    await ctx.guild.edit(name=preset.name,icon=preset.image)
-    await ctx.send(f"Alterado para o preset `{preset.name}`")
-    
-
-@bot.command(name='presence', help='Comando para gerir presences')
-@commands.check_any(permissions.isAdmin())
-async def mensagemPresences(ctx, arg1, *args):
-    msg=""
-
-    if arg1 == "list":
-        page_size = 10
-        if args is None or len(args) == 0 or args[0] is None:
-            page=0
-        else:
-            page = int(args[0])-1
-        presenceList = []
-
-
-        embedVar = discord.Embed(title="Lista de presences:", description=f"Página {page+1}", color=0x00ff00)
-        embedVar.set_footer(text="Made by Mikas™ & Marcel™")
-
-        all_presences = DB(DB.presence).select()
-
-        for row in all_presences[page*page_size:(page+1)*page_size]:
-            presenceList.append(f"    `{row.id}` - `{row.value}`")
-        
-        if presenceList:
-            embedVar.add_field(name="Presences", value='\n'.join(presenceList), inline=False)
-        else:
-            embedVar.add_field(name="Presences", value='Não existe nenhuma nesta página!', inline=False)
-
-        if len(all_presences[(page+1)*page_size:(page+2)*page_size]):
-            embedVar.add_field(name="Próxima Página", value=f'\nFaz `{prefix}presence list {page+2}` para veres a próxima página!', inline=False)
-
-        await ctx.send(embed=embedVar)      
-        return        
-
-    if arg1 == "add":
-        presences.addPresence(' '.join(args))
-        msg = "Presence adicionada"
-    if arg1 == "delete":
-        presences.deletePresence(int(args[0]))
-        msg = "Presence apagada"
-    
-    await ctx.send(msg)         
-
-@bot.command(name='birthdayreminders')
-@commands.check_any(permissions.isMaintainer())
-async def birthdayreminders(ctx, arg1, *args):
-    if not arg1:
-        await ctx.send("Tens de dizer qual o comando buralhão")
-        return
-
-    # Metodo de listagem
-    if arg1 == "list":
-        page_size = 10
-        if args is None or len(args) == 0 or args[0] is None:
-            page=0
-        else:
-            page = int(args[0])-1
-        birthdayList = []
-
-        #embed
-        embedVar = discord.Embed(title="Lista de aniversários:", description=f"Página {page+1}", color=0x00ff00)
-        embedVar.set_footer(text="Made by Mikas™")
-
-        all_birthdays = DB(DB.birthdays).select()
-
-        for row in all_birthdays[page*page_size:(page+1)*page_size]:
-            birthdayList.append(f"    `{bot.get_user(int(row.user_id))}` - `{row.birthday}`")
-            
-        if birthdayList:
-            embedVar.add_field(name="Aniversários", value='\n'.join(birthdayList), inline=False)
-        else:
-            embedVar.add_field(name="Aniversários", value='Não existe nenhuma nesta página!', inline=False)
-
-        if len(all_birthdays[(page+1)*page_size:(page+2)*page_size]):
-            embedVar.add_field(name="Próxima Página", value=f'\nFaz `{prefix}birthdayreminders list {page+2}` para veres a próxima página!', inline=False)
-
-        await ctx.send(embed=embedVar)      
-        return 
-
-    # Metodo para adicionar um aniversário novo
-    if arg1 == "add":
-        # Validações
-
-        user_id = re.search('<@!?(\d+)>', args[0], re.IGNORECASE)
-        if user_id is None:
-            await ctx.send("Tens de mencionar um user para poder adicionar o aniversário")
-            return
-        birthday = re.search('(\d{2}/\d{2})', args[1], re.IGNORECASE)
-        if birthday is None:
-            await ctx.send("Tens de mandar uma data com o seguinte formato: dd/mm")
-            return
-        
-        # Inserir aniversário
-        DB.birthdays.insert(user_id = user_id.group(1), birthday = birthday.group(1))
-        DB.commit()
-        await ctx.send("Aniversário inserido com sucesso!")
-        return
-
-    # Metodo para apagar um aniversário existente
-    if arg1 == "delete":
-        # Validações
-        user_id = re.search('<@!?(\d+)>', args[0], re.IGNORECASE)
-        if user_id is None:
-            await ctx.send("Tens de mencionar um user para poder remover o aniversário")
-            return
-        
-        # Apagar aniversário
-        DB(DB.birthdays.user_id == user_id.group(1)).delete()
-        DB.commit()
-        await ctx.send("Aniversário apagado com sucesso!")
-        return
-
-
-@bot.command(name='quit', help='Fazer com que o bot pare')
-@commands.check_any(permissions.isAdmin())
-async def botquit(ctx):
-    await ctx.send('Já vou dormir, nem queria!')
-    await bot.logout()
-
-@bot.command(name='bindChannel', help='Fazer bind a um channel')
-@commands.check_any(permissions.isAdmin())
-async def bindChannel(ctx):
-    DB.config.update_or_insert(DB.config.key == 'bindedChannel' and DB.config.guild == ctx.guild.id,
-                           key='bindedChannel',
-                           guild=ctx.guild.id,
-                           value=ctx.channel.id)
-    DB.commit()                          
-    await ctx.send('Agora só respondo neste channel! Haters!')
+# Passamos tudo para cogs :)

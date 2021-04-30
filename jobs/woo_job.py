@@ -1,7 +1,12 @@
+import fix_path
+fix_path.fix()
+
 import discord_job
 import discord
 import asyncio
-import utils_mikas
+import libs.utils_mikas as utils_mikas
+
+
 
 bot = discord_job.DiscordJob("Woo Wednesday")
 

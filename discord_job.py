@@ -1,13 +1,11 @@
 import discord
 import os
-import logger
+import libs.logger as logger
 import asyncio
-import database
+import libs.database as database
 from dotenv import load_dotenv
+import settings
 
-load_dotenv()
-token = os.getenv('DISCORD_TOKEN')
-mikas_guild_id = os.getenv('MIKAS_GUILD')
 logger = logger.Logger("logs", "jobs")
 DB = database.getDB()
 
@@ -45,7 +43,7 @@ class DiscordJob(object):
 
     async def _send_message_to_bound_channels(self, cb):
         if self.mikas_only:
-            rows = DB(DB.config.key == "bindedChannel", DB.config.guild == mikas_guild_id).select()
+            rows = DB(DB.config.key == "bindedChannel", DB.config.guild == settings.mikas_guild_id).select()
             for row in rows:
                 channel_id = row.value
                 channel = self.bot.get_channel(int(channel_id))
@@ -69,7 +67,7 @@ class DiscordJob(object):
         self.bot.event(self.on_disconnect)
         if self.pending:
             self.write_to_logs(f'Running pending jobs ({len(self.pending)})')
-            self.bot.run(token)
+            self.bot.run(settings.token)
         else:
             self.write_to_logs(f'Nothing to do...')
 

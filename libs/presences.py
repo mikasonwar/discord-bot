@@ -1,5 +1,5 @@
 import discord
-import database
+import libs.database as database
 import random
 
 DB = database.getDB()

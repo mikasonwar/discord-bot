@@ -1,9 +1,12 @@
+import fix_path
+fix_path.fix()
+
 import discord_job
 import discord
-import database
+import libs.database as database
 import asyncio
-import utils_mikas
 from datetime import datetime
+import settings
 
 DB = database.getDB()
 bot = discord_job.DiscordJob("Birthday Checker", True)
@@ -20,8 +23,11 @@ birthday_job = BirthdayJob()
 async def job(fun):
     rows = DB(DB.birthdays.birthday == date_to_search).select()
     for row in rows:
-        await fun(content=f"O <@{row.user_id}> faz anos hoje! \n\n Tudo a dar-lhe os parabéns! \n @everyone")
+        message = f"O <@{row.user_id}> faz anos hoje! \n\n Tudo a dar-lhe os parabéns!"
+        if settings.production:
+            message+= "\n @everyone"
 
+        await fun(content=message)
 
 if birthday_job.rows:
     loop = asyncio.get_event_loop()

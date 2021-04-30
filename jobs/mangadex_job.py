@@ -1,6 +1,12 @@
+print("Mangadex está down, vamos ter de esperar que volte para voltar a ativar este job")
+exit()
+
+import fix_path
+fix_path.fix()
+
 import mangadex 
 import discord_job
-import database
+import libs.database as database
 import asyncio
 import discord
 
@@ -8,6 +14,8 @@ DB = database.getDB()
 bot = discord_job.DiscordJob("MangaDex JoJo Check")
 # Nem justifica ter um valor no .env mas depois vê-se a necessidade
 manga_id = 4880 # https://mangadex.org/title/4880
+
+
 
 
 class MangaDexJob(object):
