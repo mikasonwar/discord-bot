@@ -43,7 +43,7 @@ class DiscordJob(object):
 
     async def _send_message_to_bound_channels(self, cb):
         if self.mikas_only:
-            rows = DB(DB.config.key == "bindedChannel", DB.config.guild == settings.mikas_guild_id).select()
+            rows = DB(DB.config.key == "bindedChannel", DB.config.guild == settings.mikas_guild).select()
             for row in rows:
                 channel_id = row.value
                 channel = self.bot.get_channel(int(channel_id))
