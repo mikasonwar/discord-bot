@@ -4,6 +4,7 @@ import libs.permissions as Permissions
 import settings
 import libs.guild_preset as guild_preset
 import libs.database as database
+from libs.jokes import Jokes
 
 DB = database.getDB()
 permissions = settings.permissions
@@ -12,17 +13,15 @@ class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='teste', help='Mensagem de teste!')
-    async def mensagemTeste(self, ctx):
-        await ctx.send('Não me acordes!')
-    
     @commands.command(name='versao', help='Versão atual do bot')
-    async def mensagemTeste(self, ctx):
+    async def versao(self, ctx):
         await ctx.send(f'Versão {settings.VERSION}')
 
-    @commands.command(name='testeArgs', help='Mensagem de Teste de argumentos')
-    async def mensagemArgumentos(self, ctx, arg1, arg2):
-        await ctx.send(f'Argumento 1 : {arg1} | Argumento 2 : {arg2}')
+    @commands.command(name='joke', help='Diz-me uma piada')
+    async def joke(self, ctx):
+        jokes = Jokes()
+        result = jokes.get_joke()
+        await ctx.send(result)
 
     @commands.command(name='noobs', help='Permite ou não users com a role de usar comandos')
     @commands.check_any(permissions.isMaintainer())
