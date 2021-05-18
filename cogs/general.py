@@ -5,6 +5,7 @@ import settings
 import libs.guild_preset as guild_preset
 import libs.database as database
 from libs.jokes import Jokes
+import random
 
 DB = database.getDB()
 permissions = settings.permissions
@@ -16,6 +17,22 @@ class General(commands.Cog):
     @commands.command(name='versao', help='Versão atual do bot')
     async def versao(self, ctx):
         await ctx.send(f'Versão {settings.VERSION}')
+
+    @commands.command(name='coinflip', help='Coinflip!')
+    async def coinflip(self, ctx, heads=None, tails=None):
+        flip = random.randint(0, 1)
+        result = ""
+        if flip == 0:
+            if heads:
+                result = f"Saiu `{heads}`"
+            else:
+                result = "Calhou Cara"
+        else:
+            if tails:
+                result = f"Saiu `{tails}`"
+            else:
+                result = "Calhou Coroa"
+        await ctx.send(result)
 
     @commands.command(name='joke', help='Diz-me uma piada')
     async def joke(self, ctx):

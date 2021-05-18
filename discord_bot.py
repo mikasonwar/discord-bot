@@ -8,6 +8,8 @@ from cogs.general import General
 from cogs.presences import Presences
 from cogs.birthdays import Birthdays
 from cogs.joinleave import JoinLeave
+# from cogs.player import Player
+from cogs.tarkov import Tarkov
 import settings
 import libs.messagehandler as MessageHandler
 
@@ -48,6 +50,8 @@ def start_bot():
     bot.add_cog(Presences(bot))
     bot.add_cog(Birthdays(bot))
     bot.add_cog(JoinLeave(bot))
+    # bot.add_cog(Player(bot))
+    bot.add_cog(Tarkov(bot))
     bot.run(settings.token)
 
 def getBindedChannel(ctx):
@@ -108,6 +112,7 @@ async def on_message(message):
 @bot.event
 async def on_disconnect():
     logger.info('Disconnecting...')
+    bot.voice_client.disconnect()
     # exit()
 
 @bot.event
@@ -119,8 +124,8 @@ async def on_command_error(ctx, error):
         logger.info(f'{ctx.message.author} tried to use a command but got {error}')
         await ctx.send('Cá burro dréd, nem sabes usar o comando')
     else:
-        await ctx.send('Já partiste o caralho do bot fds')
         logger.info(f'{ctx.message.author} {error}')
+        await ctx.send('Já partiste o caralho do bot fds')
 
 # Commands
 
