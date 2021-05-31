@@ -5,7 +5,7 @@ DB = database.getDB()
 def remember_user_roles(user_id, roles):
     if get_user_roles(user_id) is not None:
         delete_user_roles(user_id)
-        return
+        
 
     DB.user_roles.insert(user_id=user_id, roles=roles)
     DB.commit()
