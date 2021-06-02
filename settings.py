@@ -3,7 +3,7 @@ import libs.logger as logger
 from dotenv import load_dotenv
 import libs.permissions as Permissions
 
-VERSION = '1.3.1'
+VERSION = '1.3.2'
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')

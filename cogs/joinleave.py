@@ -13,7 +13,6 @@ class JoinLeave(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
     @commands.command(name='kick', help='Dá kick a um utilizador')
     @commands.check_any(permissions.isAdmin())
     async def kick(self, ctx, member:discord.Member = None):
@@ -28,7 +27,18 @@ class JoinLeave(commands.Cog):
             await member.kick()
             await ctx.send(f"<:AYAYA:763899798365143060> <@{member.id}> foi kickado <:AYAYA:763899798365143060>") 
         except:
+            user_roles.delete_user_roles(member.id)
             await ctx.send(f"Dá-me um mais fácil...")
+
+    @commands.command(name='rolesclean', help='Limpa as roles guardadas de um user na BD')
+    @commands.check_any(permissions.isAdmin())
+    async def kick(self, ctx, member:discord.Member = None):
+        if member is None:
+            user_roles.delete_all_user_roles()
+            await ctx.send("Foram limpas todas as roles guardadas na BD")
+        else:
+            user_roles.delete_user_roles(member.id)
+            await ctx.send("Foram limpas as roles do user na BD")
 
     @commands.Cog.listener()
     async def on_member_join(self,member):
