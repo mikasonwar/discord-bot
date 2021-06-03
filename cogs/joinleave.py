@@ -32,7 +32,7 @@ class JoinLeave(commands.Cog):
 
     @commands.command(name='rolesclean', help='Limpa as roles guardadas de um user na BD')
     @commands.check_any(permissions.isAdmin())
-    async def kick(self, ctx, member:discord.Member = None):
+    async def rolesclean(self, ctx, member:discord.Member = None):
         if member is None:
             user_roles.delete_all_user_roles()
             await ctx.send("Foram limpas todas as roles guardadas na BD")
