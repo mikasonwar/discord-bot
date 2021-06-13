@@ -8,7 +8,7 @@ from cogs.general import General
 from cogs.presences import Presences
 from cogs.birthdays import Birthdays
 from cogs.joinleave import JoinLeave
-# from cogs.player import Player
+from cogs.together import Together
 from cogs.tarkov import Tarkov
 import settings
 import libs.messagehandler as MessageHandler
@@ -50,8 +50,8 @@ def start_bot():
     bot.add_cog(Presences(bot))
     bot.add_cog(Birthdays(bot))
     bot.add_cog(JoinLeave(bot))
-    # bot.add_cog(Player(bot))
     bot.add_cog(Tarkov(bot))
+    bot.add_cog(Together(bot))
     bot.run(settings.token)
 
 def getBindedChannel(ctx):
